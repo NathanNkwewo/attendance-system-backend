@@ -1,20 +1,24 @@
 const pool = require('../db/pool')
 
+// Generates a random 6-digit numeric code
 const generateSessionCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
 // POST /sessions — start a new session for a course
 const createSession = async (req, res) => {
-  const { courseId, durationMinutes } = req.body
+  const { courseId, geofenceRadius = 150 } = req.body
 
   if (!courseId) {
     return res.status(400).json({ message: 'courseId is required.' })
   }
 
-  const duration = durationMinutes || 15 // default 15 minutes
+  if (geofenceRadius < 10 || geofenceRadius > 1000) {
+    return res.status(400).json({ message: 'geofenceRadius must be between 10 and 1000 metres.' })
+  }
 
   try {
+    // Verify the course belongs to this faculty
     const courseCheck = await pool.query(
       'SELECT id, name FROM courses WHERE id = $1 AND faculty_id = $2',
       [courseId, req.faculty.id]
@@ -29,27 +33,12 @@ const createSession = async (req, res) => {
     const sessionUrl = `${process.env.FRONTEND_URL}/attend/${sessionId}`
 
     const result = await pool.query(
-      `INSERT INTO sessions (id, course_id, session_code, session_url, duration_minutes)
+      `INSERT INTO sessions (id, course_id, session_code, session_url, geofence_radius)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [sessionId, courseId, sessionCode, sessionUrl, duration]
+      [sessionId, courseId, sessionCode, sessionUrl, geofenceRadius]
     )
 
     const row = result.rows[0]
-
-    // Schedule auto-close
-    setTimeout(async () => {
-      try {
-        await pool.query(
-          `UPDATE sessions SET status = 'closed', closed_at = NOW()
-           WHERE id = $1 AND status = 'active'`,
-          [sessionId]
-        )
-        console.log(`Session ${sessionId} auto-closed after ${duration} minutes`)
-      } catch (err) {
-        console.error('Auto-close error:', err.message)
-      }
-    }, duration * 60 * 1000)
-
     return res.status(201).json({
       id: row.id,
       courseId: row.course_id,
@@ -57,7 +46,7 @@ const createSession = async (req, res) => {
       sessionCode: row.session_code,
       sessionUrl: row.session_url,
       status: row.status,
-      durationMinutes: row.duration_minutes,
+      geofenceRadius: row.geofence_radius,
       createdAt: row.created_at,
       closedAt: row.closed_at,
     })
@@ -67,11 +56,12 @@ const createSession = async (req, res) => {
   }
 }
 
-// PATCH /sessions/:id/close
+// PATCH /sessions/:id/close — close an active session
 const closeSession = async (req, res) => {
   const { id } = req.params
 
   try {
+    // Verify session belongs to this faculty via course
     const check = await pool.query(
       `SELECT s.id FROM sessions s
        JOIN courses c ON s.course_id = c.id
@@ -89,6 +79,8 @@ const closeSession = async (req, res) => {
     )
 
     const row = result.rows[0]
+
+    // Get course name
     const courseResult = await pool.query('SELECT name FROM courses WHERE id = $1', [row.course_id])
 
     return res.json({
@@ -98,7 +90,6 @@ const closeSession = async (req, res) => {
       sessionCode: row.session_code,
       sessionUrl: row.session_url,
       status: row.status,
-      durationMinutes: row.duration_minutes,
       createdAt: row.created_at,
       closedAt: row.closed_at,
     })
@@ -108,7 +99,7 @@ const closeSession = async (req, res) => {
   }
 }
 
-// GET /sessions/:id
+// GET /sessions/:id — get session details + attendees
 const getSession = async (req, res) => {
   const { id } = req.params
 
@@ -151,7 +142,6 @@ const getSession = async (req, res) => {
       sessionCode: row.session_code,
       sessionUrl: row.session_url,
       status: row.status,
-      durationMinutes: row.duration_minutes,
       createdAt: row.created_at,
       closedAt: row.closed_at,
       attendees,

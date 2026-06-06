@@ -36,13 +36,15 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
  * @param {number} classLon
  * @param {number} studentLat
  * @param {number} studentLon
- * @returns {{ verified: boolean, distance: number }}
+ * @param {number} [radius] - Geofence radius in metres. Defaults to GEOFENCE_RADIUS_METRES (150).
+ * @returns {{ verified: boolean, distance: number, radius: number }}
  */
-const verifyGeofence = (classLat, classLon, studentLat, studentLon) => {
+const verifyGeofence = (classLat, classLon, studentLat, studentLon, radius = GEOFENCE_RADIUS_METRES) => {
   const distance = haversineDistance(classLat, classLon, studentLat, studentLon)
   return {
     distance: Math.round(distance * 10) / 10, // round to 1 decimal
-    verified: distance <= GEOFENCE_RADIUS_METRES,
+    verified: distance <= radius,
+    radius,
   }
 }
 
