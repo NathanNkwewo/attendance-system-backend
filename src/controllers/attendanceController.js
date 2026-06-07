@@ -3,7 +3,7 @@ const { verifyGeofence } = require('../utils/haversine')
 
 // POST /attendance/submit — student submits attendance
 const submitAttendance = async (req, res) => {
-  const { studentName, studentId, sessionCode, latitude, longitude } = req.body
+  const { studentName, studentId, sessionCode, latitude, longitude, faceVerified = false } = req.body
 
   if (!studentName || !studentId || !sessionCode || !latitude || !longitude) {
     return res.status(400).json({ message: 'All fields are required.' })
@@ -75,9 +75,9 @@ const submitAttendance = async (req, res) => {
 
     // Save attendance record
     await pool.query(
-      `INSERT INTO attendance (session_id, student_name, student_id, latitude, longitude, distance, verified)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [session.id, studentName, studentId, latitude, longitude, distance, verified]
+      `INSERT INTO attendance (session_id, student_name, student_id, latitude, longitude, distance, verified, face_verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [session.id, studentName, studentId, latitude, longitude, distance, verified, faceVerified]
     )
 
     if (!verified) {
