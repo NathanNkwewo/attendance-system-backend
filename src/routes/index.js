@@ -1,4 +1,5 @@
 const express = require('express')
+const faceRoutes = require('./faceRoutes')
 const router = express.Router()
 const auth = require('../middleware/auth')
 
@@ -28,4 +29,5 @@ router.post('/sessions/:id/location', auth, setFacultyLocation)
 // ─── Attendance (public — students don't have accounts) ───────────────────────
 router.post('/attendance/submit', submitAttendance)
 
+router.use('/face', faceRoutes)
 module.exports = router
