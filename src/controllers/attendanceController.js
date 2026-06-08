@@ -28,6 +28,12 @@ const submitAttendance = async (req, res) => {
     }
 
     const session = sessionResult.rows[0]
+    // Check if submission is late
+let isLate = false
+if (session.late_after_minutes) {
+  const elapsed = (Date.now() - new Date(session.created_at).getTime()) / 1000
+  isLate = elapsed > session.late_after_minutes * 60
+}
 
     // Check session is still active
     if (session.status === 'closed') {
@@ -75,8 +81,8 @@ const submitAttendance = async (req, res) => {
 
     // Save attendance record
     await pool.query(
-      `INSERT INTO attendance (session_id, student_name, student_id, latitude, longitude, distance, verified, face_verified)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO attendance (session_id, student_name, student_id, latitude, longitude, distance, verified, face_verified, is_late)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [session.id, studentName, studentId, latitude, longitude, distance, verified, faceVerified]
     )
 

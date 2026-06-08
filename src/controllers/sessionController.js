@@ -7,7 +7,7 @@ const generateSessionCode = () => {
 
 // POST /sessions — start a new session for a course
 const createSession = async (req, res) => {
-  const { courseId, geofenceRadius = 150 } = req.body
+ const { courseId, geofenceRadius = 150, lateAfterMinutes = null } = req.body
 
   if (!courseId) {
     return res.status(400).json({ message: 'courseId is required.' })
@@ -33,8 +33,8 @@ const createSession = async (req, res) => {
     const sessionUrl = `${process.env.FRONTEND_URL}/attend/${sessionId}`
 
     const result = await pool.query(
-      `INSERT INTO sessions (id, course_id, session_code, session_url, geofence_radius)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      `INSERT INTO sessions (id, course_id, session_code, session_url, geofence_radius, late_after_minutes)
+VALUES ($1, $2, $3, $4, $5, $6) *`,
       [sessionId, courseId, sessionCode, sessionUrl, geofenceRadius]
     )
 
