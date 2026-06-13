@@ -34,7 +34,7 @@ const createSession = async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO sessions (id, course_id, session_code, session_url, geofence_radius, late_after_minutes)
-VALUES ($1, $2, $3, $4, $5, $6) *`,
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
       [sessionId, courseId, sessionCode, sessionUrl, geofenceRadius]
     )
 
