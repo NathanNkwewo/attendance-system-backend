@@ -83,7 +83,7 @@ if (session.late_after_minutes) {
     await pool.query(
       `INSERT INTO attendance (session_id, student_name, student_id, latitude, longitude, distance, verified, face_verified, is_late)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [session.id, studentName, studentId, latitude, longitude, distance, verified, faceVerified]
+      [session.id, studentName, studentId, latitude, longitude, distance, verified, faceVerified, isLate]
     )
 
     if (!verified) {
@@ -96,11 +96,12 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     }
 
     return res.status(201).json({
-      success: true,
-      message: 'Attendance recorded successfully.',
-      verified: true,
-      distance,
-    })
+  success: true,
+  message: isLate ? 'Attendance recorded — you are late.' : 'Attendance recorded successfully.',
+  verified: true,
+  isLate,
+  distance,
+})
   } catch (err) {
     console.error('Submit attendance error:', err.message)
     return res.status(500).json({ message: 'Server error. Please try again.' })
