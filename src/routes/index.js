@@ -1,7 +1,7 @@
 const express = require('express')
 const router  = express.Router()
 const auth    = require('../middleware/auth')
-const faceRoutes = require('./faceRoutes')
+
 
 const { register, login }                              = require('../controllers/authController')
 const { getCourses, createCourse, getAttendanceSummary } = require('../controllers/courseController')
@@ -31,6 +31,6 @@ router.post('/sessions/:sessionId/manual-attendance', auth, manualMarkAttendance
 router.post('/attendance/submit', submitAttendance)
 
 // ── Face recognition (public) ─────────────────────────────────────────────
-router.use('/face', faceRoutes)
+
 
 module.exports = router
